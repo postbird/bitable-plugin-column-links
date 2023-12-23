@@ -1,13 +1,13 @@
 import "./App.css";
-import { bitable, TableMeta } from "@lark-base-open/js-sdk";
+import { bitable, ITableMeta } from "@lark-base-open/js-sdk";
 import { Button, Form, Select, Alert, message, Input, Space, Card } from "antd";
 import { useState, useEffect, useMemo } from "react";
 
 export default function App() {
-  const [tableMetaList, setTableMetaList] = useState<TableMeta[]>();
+  const [tableMetaList, setTableMetaList] = useState<ITableMeta[]>();
   const [fieldOptions, setFieldOptions] = useState<any[]>([]);
   const [tableOptions, setTableOptions] = useState<any[]>([]);
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function App() {
 
     results
       .filter((item) => Boolean(item))
-      .forEach((textArr) => {
+      .forEach((textArr: any[]) => {
         textArr.forEach((item) => {
           if (item.link) {
             _linkList.push(item.link);
