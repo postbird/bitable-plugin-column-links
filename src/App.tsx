@@ -14,13 +14,14 @@ import {
   Tabs,
   TabsProps,
   List,
+  Typography,
 } from "antd";
 import { useState, useEffect, useMemo } from "react";
 import { CopyOutlined } from "@ant-design/icons";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { filerLinks } from "./utils";
 
-const getTabOptions = (linkList: any): TabsProps["items"] => {
+const getTabOptions = (linkList: any = []): TabsProps["items"] => {
   const displayLinkList = JSON.stringify(linkList, null, 2);
   return [
     {
@@ -28,7 +29,16 @@ const getTabOptions = (linkList: any): TabsProps["items"] => {
       label: "List View",
       children: (
         <div style={{ marginTop: 16 }}>
-          <List dataSource={linkList} />
+          <List
+            dataSource={linkList}
+            renderItem={(item: any, index) => (
+              <List.Item key={`${item}_${index}`}>
+                <Typography.Text ellipsis={{ tooltip: item }} title={item}>
+                  {item}
+                </Typography.Text>
+              </List.Item>
+            )}
+          />
         </div>
       ),
     },
@@ -53,6 +63,7 @@ export default function App() {
   const [fieldOptions, setFieldOptions] = useState<any[]>([]);
   const [tableOptions, setTableOptions] = useState<any[]>([]);
   const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -94,6 +105,7 @@ export default function App() {
 
   const handleOnClick = async () => {
     try {
+      setLoading(true);
       await form.validateFields();
       const formValues = form.getFieldsValue();
       const fieldId = formValues.fieldId;
@@ -127,6 +139,8 @@ export default function App() {
       });
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -220,12 +234,13 @@ export default function App() {
             </Form.Item>
           </>
         )}
-        <Button type="primary" onClick={handleOnClick}>
+        <Button type="primary" onClick={handleOnClick} loading={loading}>
           Submit
         </Button>
       </Form>
       <Card
         size="small"
+        loading={loading}
         title={
           <Space>
             <span>Results</span>
