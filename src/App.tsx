@@ -1,7 +1,52 @@
 import "./App.css";
 import { bitable, ITableMeta } from "@lark-base-open/js-sdk";
-import { Button, Form, Select, Alert, message, Input, Space, Card } from "antd";
+import {
+  Button,
+  Form,
+  Select,
+  Alert,
+  message,
+  Input,
+  Space,
+  Card,
+  Tooltip,
+  Switch,
+  Tabs,
+  TabsProps,
+  List,
+} from "antd";
 import { useState, useEffect, useMemo } from "react";
+import { CopyOutlined } from "@ant-design/icons";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import { filerLinks } from "./utils";
+
+const getTabOptions = (linkList: any): TabsProps["items"] => {
+  const displayLinkList = JSON.stringify(linkList, null, 2);
+  return [
+    {
+      key: "list",
+      label: "List View",
+      children: (
+        <div style={{ marginTop: 16 }}>
+          <List dataSource={linkList} />
+        </div>
+      ),
+    },
+    {
+      key: "json",
+      label: "JSON View",
+      children: (
+        <div style={{ marginTop: 16 }}>
+          <Input.TextArea
+            rows={10}
+            style={{ resize: "vertical" }}
+            value={displayLinkList}
+          />
+        </div>
+      ),
+    },
+  ];
+};
 
 export default function App() {
   const [tableMetaList, setTableMetaList] = useState<ITableMeta[]>();
@@ -93,16 +138,23 @@ export default function App() {
     const _linkList: string[] = [];
 
     results
-      .filter((item) => Boolean(item))
+      .filter((item) => Boolean(item) && Array.isArray(item))
       .forEach((textArr: any[]) => {
-        textArr.forEach((item) => {
+        console.log("textArrtextArr", textArr);
+        textArr?.forEach((item) => {
           if (item.link) {
             _linkList.push(item.link);
           }
         });
       });
-    console.log("_linkList", _linkList);
-    return _linkList;
+
+    const filteredLinks = filerLinks(
+      _linkList,
+      form.getFieldValue("onlyLarkDoc")
+    );
+
+    console.log("_linkList", _linkList, filteredLinks);
+    return filteredLinks;
   }, [results]);
 
   const matchResult = useMemo(() => {
@@ -116,11 +168,15 @@ export default function App() {
     return JSON.stringify(linkList, null, 2);
   }, [linkList]);
 
+  const allowToAction = linkList?.length >= 1;
+
   return (
     <main className="main">
       <div style={{ marginBottom: 16 }}>
         <Alert
-          showIcon
+          style={{ padding: "6px 12px" }}
+          banner
+          showIcon={false}
           type="info"
           description="Help you quickly get the links of lark doc by table and column"
         />
@@ -140,39 +196,62 @@ export default function App() {
           />
         </Form.Item>
         {!fieldOptions?.length ? null : (
-          <Form.Item
-            name="fieldId"
-            label="Select Table Column"
-            required
-            rules={[{ required: true, message: "please select the column" }]}
-          >
-            <Select
-              style={{ width: "100%" }}
-              placeholder="select a column"
-              options={fieldOptions}
-            />
-          </Form.Item>
+          <>
+            <Form.Item
+              name="fieldId"
+              label="Select Table Column"
+              required
+              rules={[{ required: true, message: "please select the column" }]}
+            >
+              <Select
+                style={{ width: "100%" }}
+                placeholder="select a column"
+                options={fieldOptions}
+              />
+            </Form.Item>
+            <Form.Item
+              labelAlign="left"
+              name="onlyLarkDoc"
+              label="Only Lark Docs?"
+              valuePropName="checked"
+              initialValue={true}
+            >
+              <Switch />
+            </Form.Item>
+          </>
         )}
         <Button type="primary" onClick={handleOnClick}>
           Submit
         </Button>
       </Form>
-      <Card size="small" title="Results" style={{ marginTop: 16 }}>
+      <Card
+        size="small"
+        title={
+          <Space>
+            <span>Results</span>
+            <Tooltip title="Click to copy as JSON structure">
+              <CopyToClipboard
+                onCopy={() => message.success("Copied")}
+                text={displayLinkList}
+              >
+                <Button
+                  type="link"
+                  icon={<CopyOutlined />}
+                  disabled={!allowToAction}
+                />
+              </CopyToClipboard>
+            </Tooltip>
+          </Space>
+        }
+        style={{ marginTop: 16 }}
+      >
         <div>
           <Space>
             Valid Records:{matchResult.matched} / Total Records:{" "}
             {matchResult.total}
           </Space>
         </div>
-        <div style={{ marginTop: 16 }}>
-          {!results?.length ? null : (
-            <Input.TextArea
-              rows={10}
-              style={{ resize: "vertical" }}
-              value={displayLinkList}
-            />
-          )}
-        </div>
+        <Tabs items={getTabOptions(linkList)} />
       </Card>
     </main>
   );
